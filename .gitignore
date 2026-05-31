@@ -1,0 +1,19 @@
+# OS / OneDrive noise
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+.DS_Store
+*.lnk
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs / temp
+*.log
+tmp/
+temp/
