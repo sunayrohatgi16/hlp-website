@@ -1,63 +1,55 @@
-# Resume Notes — where we left off
+# Resume Notes — site is live
 
-## What's working
+## Current state (all verified working)
 
-- `index.html` loads, the layout and existing content are unchanged.
-- Blog + Sign In nav links work. Auth modal opens, register/sign-in form is wired to Supabase.
-- Supabase project at `https://xxagiypldvcizhocrfnb.supabase.co` is reachable; the `posts` table responds to anon queries.
-- Local test server: run `.\serve.ps1` then open **http://localhost:8000/**.
-- DB schema (`supabase-schema.sql`) has been run (the table exists).
+- **Live site:** deployed to Netlify, auto-deploys on every push to `main`.
+- **Source:** https://github.com/sunayrohatgi16/hlp-website
+- **Backend:** Supabase project `xxagiypldvcizhocrfnb.supabase.co`
+- **End-to-end confirmed:** signup, login, write post, comments, likes, image upload all work on the live deploy.
 
-## The blocker
+## How to make a change and ship it
 
-You published a post but the blog list says **"No posts yet"**. Most likely cause: your `profiles` row was never created on signup (the trigger only fires for accounts created *after* `supabase-schema.sql` was run). The post list query inner-joins on `profiles`, so a post whose author has no profile row gets filtered out.
+Edit any file locally, then in PowerShell from this folder:
 
-It's also possible the post insert itself was rejected — `posts.author_id` foreign-keys to `profiles.id`, so no profile = insert fails silently.
-
-## First thing to do when you resume
-
-**Run this once in Supabase → SQL Editor → New query** to backfill any missing profile rows for accounts that signed up before the trigger existed:
-
-```sql
-insert into public.profiles (id, email, display_name)
-select u.id, u.email, split_part(u.email, '@', 1)
-from auth.users u
-left join public.profiles p on p.id = u.id
-where p.id is null;
+```powershell
+git add .
+git commit -m "describe your change"
+git push
 ```
 
-Then in the browser:
-1. Hard refresh `http://localhost:8000/` (Ctrl+Shift+R)
-2. Sign in again
-3. Go to **Blog** → **Write a Post** → publish
-4. The post should now appear in the list
+Netlify redeploys within ~30 seconds. No build step.
 
-## If that doesn't fix it
+## How to test locally before pushing
 
-- Open DevTools (F12) → Console → look for any red errors and the `[blog] loadPosts result:` log line. Share that with me.
-- Also paste me the output of these in the Console (after signing in):
-  ```js
-  (await sb.from('posts').select('id,title,author_id')).data
-  (await sb.from('profiles').select('id,display_name')).data
-  ```
-- If the second one is empty even after the backfill SQL, something is wrong with the schema. Re-run `supabase-schema.sql`.
-
-## Files in this folder
-
-| File | Purpose |
-|---|---|
-| `index.html` | The site (renamed from the original long filename) |
-| `supabase-config.js` | Your project URL + anon key (already filled in) |
-| `supabase-schema.sql` | Run once in Supabase SQL Editor |
-| `SETUP.md` | Full setup walkthrough |
-| `serve.ps1` | Local test server (no Python/Node needed) |
-| `RESUME.md` | This file |
-| `The Humanistic Leadership Project — Leadership Education…_website_files/` | Original asset folder (unchanged) |
-
-## To restart the local server
-
-If it's not running:
 ```powershell
 .\serve.ps1
 ```
-Open http://localhost:8000/ and **hard refresh** (Ctrl+Shift+R) so the browser doesn't serve a cached old copy.
+
+Open http://localhost:8000/ and hard-refresh (Ctrl+Shift+R) if something looks stale.
+
+## What's where
+
+| File | Purpose |
+|---|---|
+| `index.html` | The site |
+| `supabase-config.js` | Supabase URL + anon key (safe to commit) |
+| `supabase-schema.sql` | DB schema; already run in Supabase |
+| `serve.ps1` | Local PS HttpListener server |
+| `SETUP.md` | Original setup walkthrough |
+| `DEPLOY-NETLIFY.md` | Netlify deploy guide (already executed) |
+| `.gitignore` | Excludes OS / IDE noise |
+
+## Common follow-ups you might want next
+
+- **Custom domain** (e.g. `humanisticleadership.org`): Netlify → Site settings → Domain management → Add custom domain. Don't forget to update Supabase Site URL + Redirect URLs to the new domain.
+- **Email subscribers** when a new post is published: Supabase Edge Functions + Resend.
+- **Admin dashboard** if you ever switch from auto-publish to a moderation queue.
+- **Image uploads with size enforcement** server-side (currently 5 MB enforced only in JS).
+- **Pagination** on the blog list once you have more than ~50 posts.
+
+## If something breaks
+
+- Browser shows stale code: hard refresh (Ctrl+Shift+R).
+- Posts exist in DB but don't show on the page: most likely a missing `profiles` row for the author. Backfill SQL is in `SETUP.md` troubleshooting + in memory.
+- Auth confirmation emails point at localhost: re-check Supabase → Authentication → URL Configuration. Site URL must be the Netlify URL.
+- "Tracking Prevention blocked access..." in Edge console: harmless warning, ignore.
