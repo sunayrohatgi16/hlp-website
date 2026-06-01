@@ -146,6 +146,54 @@ create policy "post_images_delete"
     and (storage.foldername(name))[1] = auth.uid()::text
   );
 
+-- ── 8. STORIES (Student Voices) ───────────────────────────────────
+-- Submissions to the "Share Your Story" form on the Student Voices page.
+-- Logged-in users submit; admin manually flips `approved` to true via the
+-- Supabase Table Editor; only approved rows are visible to the public.
+create table if not exists public.stories (
+  id           bigserial   primary key,
+  author_id    uuid        not null references public.profiles(id) on delete cascade,
+  display_name text        not null default 'Anonymous',
+  school_grade text        default '',
+  quality      text        default '',
+  reflection   text        not null,
+  approved     boolean     not null default false,
+  created_at   timestamptz not null default now()
+);
+create index if not exists stories_approved_created_idx
+  on public.stories(approved, created_at desc);
+
+alter table public.stories enable row level security;
+
+-- Drop and recreate so this is idempotent
+drop policy if exists "stories_select_approved" on public.stories;
+drop policy if exists "stories_select_own"      on public.stories;
+drop policy if exists "stories_insert_authed"   on public.stories;
+drop policy if exists "stories_delete_own"      on public.stories;
+
+-- Anyone can see approved stories
+create policy "stories_select_approved"
+  on public.stories for select
+  using (approved = true);
+
+-- A signed-in user can always see their own submissions (even pending)
+create policy "stories_select_own"
+  on public.stories for select
+  using (auth.uid() = author_id);
+
+-- Signed-in users can submit, but only as themselves and always pending
+create policy "stories_insert_authed"
+  on public.stories for insert
+  with check (auth.uid() = author_id and approved = false);
+
+-- Authors can withdraw their own submissions
+create policy "stories_delete_own"
+  on public.stories for delete
+  using (auth.uid() = author_id);
+
+-- NOTE: there is no UPDATE policy. Approval is done by you in the
+-- Supabase Table Editor (which uses service_role and bypasses RLS).
+
 -- ═══════════════════════════════════════════════════════════════════
 -- Done. Tables, security policies, signup trigger, and storage ready.
 -- ═══════════════════════════════════════════════════════════════════

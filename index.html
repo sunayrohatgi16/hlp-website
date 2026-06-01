@@ -5015,7 +5015,7 @@ footer { padding: 64px 60px 0; }
       <div class="sec-eyebrow">Reflections from the Community</div>
       <h2 class="sec-title">What Students Are <em>Practicing</em></h2>
       <div class="sec-sub">Short reflections on practicing HL qualities in everyday high school life.</div>
-      <div class="voices-grid">
+      <div class="voices-grid" id="voices-grid">
         <div class="voice-card reveal visible"><span class="chip chip-teal" style="margin-bottom:12px;display:inline-block;">Empathy · Vol. 3</span><div class="voice-text">"This week I tried the Empathy Pause before responding to a text from my teammate who seemed annoyed. I spent 30 seconds thinking about what her week had been like. When I responded, the whole conversation shifted. She later told me it meant a lot that I noticed something was off."</div><div class="voice-name">Student</div><div class="voice-school">Grade 11</div></div>
         <div class="voice-card reveal reveal-delay-1 visible"><span class="chip" style="margin-bottom:12px;display:inline-block;">Integrity · Vol. 5</span><div class="voice-text">"The integrity audit made me realize I had been telling my coach I was fine with how practice was going, when I actually wasn't. I finally said something honest. It was uncomfortable for about 10 minutes. Then everything improved."</div><div class="voice-name">Student</div><div class="voice-school">Grade 10 · Varsity Athlete</div></div>
         <div class="voice-card reveal reveal-delay-2 visible"><span class="chip chip-gold" style="margin-bottom:12px;display:inline-block;">Purpose · Vol. 2</span><div class="voice-text">"I volunteered at a food bank for community service hours. The second time I went back, it wasn't for the hours. That shift — from obligation to choice — is the closest I've come to understanding what purpose actually feels like."</div><div class="voice-name">Student</div><div class="voice-school">Grade 12 · Debate Team</div></div>
@@ -5024,14 +5024,21 @@ footer { padding: 64px 60px 0; }
         <div class="voice-card reveal reveal-delay-1 visible"><span class="chip" style="margin-bottom:12px;display:inline-block;">Introduction · Vol. 1</span><div class="voice-text">"The question that stuck with me from Vol. 1: 'Who do you want to be remembered as?' Not what job, not what grade — who. I've been thinking about it for three weeks. I don't have the answer yet, but asking it has already changed some of my choices."</div><div class="voice-name">Student</div><div class="voice-school">Grade 10</div></div>
       </div>
 
-      <div class="submit-box" style="margin-top:48px;">
+      <div class="submit-box" style="margin-top:48px;" id="story-submit-box">
         <div><div class="sb-title" style="font-family:&#39;Playfair Display&#39;,serif;font-size:22px;font-weight:700;margin-bottom:12px;">Share Your Story</div><div class="sb-desc">Have you practiced an HL quality this week? Tried an action challenge? Had a moment that changed how you think about leadership? We want to hear it. Student voices make this community real — and your story might be exactly what another student needs to read.</div></div>
-        <div class="sb-form">
-          <input class="sb-input" type="text" placeholder="Your name (or Anonymous)">
-          <input class="sb-input" type="text" placeholder="Your school and grade">
-          <select class="sb-input" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);"><option value="">Which HL Quality?</option><option>Purpose</option><option>Empathy</option><option>Inclusivity</option><option>Integrity</option><option>Authenticity</option><option>Courage</option><option>Growth</option></select>
-          <textarea class="sb-input sb-textarea" placeholder="Your reflection (150-300 words)..."></textarea>
-          <button class="btn btn-gold" style="width:fit-content;">Submit Your Reflection</button>
+        <!-- Visible when signed in -->
+        <div class="sb-form" id="story-form-fields" style="display:none;">
+          <input class="sb-input" type="text" id="story-name" placeholder="Your name (or Anonymous)">
+          <input class="sb-input" type="text" id="story-school" placeholder="Your school and grade">
+          <select class="sb-input" id="story-quality" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);"><option value="">Which HL Quality?</option><option>Purpose</option><option>Empathy</option><option>Inclusivity</option><option>Integrity</option><option>Authenticity</option><option>Courage</option><option>Growth</option></select>
+          <textarea class="sb-input sb-textarea" id="story-reflection" placeholder="Your reflection (150-300 words)..."></textarea>
+          <button class="btn btn-gold" id="story-submit-btn" style="width:fit-content;">Submit Your Reflection</button>
+          <div id="story-msg" style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.85);min-height:18px;"></div>
+        </div>
+        <!-- Visible when NOT signed in -->
+        <div id="story-form-locked" style="display:none;padding:18px;background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.25);border-radius:6px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.85);font-size:14px;">
+          <button class="btn btn-gold" id="story-signin-btn" style="margin-bottom:10px;">Sign in to share your story</button>
+          <div style="font-size:13px;color:rgba(255,255,255,0.65);">Creating an account is free. You can still publish under "Anonymous" if you'd rather not show your name.</div>
         </div>
       </div>
     </div>
@@ -6312,6 +6319,9 @@ window.addEventListener('DOMContentLoaded', function() {
       if (hash === 'profile' && state.currentProfileId) {
         renderProfile(state.currentProfileId);
       }
+      if (hash === 'voices') {
+        updateStoryFormVisibility();
+      }
     });
   }
 
@@ -6718,6 +6728,116 @@ window.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // ── 12b. Student Voices — stories ──────────────────────
+  const QUALITY_CHIP = {
+    Purpose:     'chip-gold',
+    Empathy:     'chip-teal',
+    Inclusivity: 'chip-coral',
+    Integrity:   '',
+    Authenticity:'chip-teal',
+    Courage:     'chip-gold',
+    Growth:      'chip-coral'
+  };
+
+  function updateStoryFormVisibility() {
+    const fields = $('story-form-fields');
+    const locked = $('story-form-locked');
+    if (!fields || !locked) return;
+    if (state.user) {
+      fields.style.display = '';
+      locked.style.display = 'none';
+      // Pre-fill name with profile display name if empty
+      const nameInput = $('story-name');
+      if (nameInput && !nameInput.value && state.profile && state.profile.display_name) {
+        nameInput.value = state.profile.display_name;
+      }
+    } else {
+      fields.style.display = 'none';
+      locked.style.display = '';
+    }
+  }
+
+  async function loadStories() {
+    if (!sb) return;
+    const grid = $('voices-grid');
+    if (!grid) return;
+    // Remove any DB-rendered cards from a previous render
+    grid.querySelectorAll('[data-story-id]').forEach(el => el.remove());
+
+    const { data, error } = await sb
+      .from('stories')
+      .select('id,display_name,school_grade,quality,reflection,created_at')
+      .eq('approved', true)
+      .order('created_at', { ascending: false })
+      .limit(60);
+    if (error) {
+      console.warn('[stories] load error:', error);
+      return;
+    }
+    if (!data || !data.length) return;
+
+    const html = data.map(storyCardHTML).join('');
+    grid.insertAdjacentHTML('beforeend', html);
+  }
+
+  function storyCardHTML(s) {
+    const quality = s.quality || '';
+    const chip    = QUALITY_CHIP[quality] || '';
+    const date    = s.created_at
+      ? new Date(s.created_at).toLocaleDateString('en-US', { month:'short', year:'numeric' })
+      : '';
+    const chipText = quality
+      ? quality + (date ? ' · ' + date : '')
+      : (date || 'Reflection');
+    const name   = s.display_name || 'Anonymous';
+    const school = s.school_grade || '';
+    return ''
+      + '<div class="voice-card reveal visible" data-story-id="' + s.id + '">'
+      +   '<span class="chip ' + chip + '" style="margin-bottom:12px;display:inline-block;">'
+      +     escapeHtml(chipText)
+      +   '</span>'
+      +   '<div class="voice-text">"' + escapeHtml(s.reflection) + '"</div>'
+      +   '<div class="voice-name">' + escapeHtml(name) + '</div>'
+      +   (school ? '<div class="voice-school">' + escapeHtml(school) + '</div>' : '')
+      + '</div>';
+  }
+
+  async function submitStory() {
+    if (!state.user) return openAuth('signin');
+    if (!sb)         return showMsg('story-msg', 'Supabase not configured.', true);
+
+    const name       = ($('story-name').value || '').trim() || 'Anonymous';
+    const school     = ($('story-school').value || '').trim();
+    const quality    = ($('story-quality').value || '').trim();
+    const reflection = ($('story-reflection').value || '').trim();
+
+    if (reflection.length < 50) {
+      return showMsg('story-msg', 'Please write at least a few sentences (50+ characters).', true);
+    }
+    if (reflection.length > 4000) {
+      return showMsg('story-msg', 'That is a bit long — keep it under 4000 characters.', true);
+    }
+
+    showMsg('story-msg', 'Submitting…');
+    const { error } = await sb.from('stories').insert({
+      author_id:    state.user.id,
+      display_name: name,
+      school_grade: school,
+      quality:      quality,
+      reflection:   reflection,
+      approved:     false
+    });
+    if (error) return showMsg('story-msg', error.message, true);
+
+    // Clear fields, show pending message
+    $('story-reflection').value = '';
+    $('story-school').value     = '';
+    $('story-quality').value    = '';
+    showMsg('story-msg',
+      'Thank you — your story is in the review queue. It will appear here once approved.',
+      false);
+  }
+
   // ── 13. Route hook ─────────────────────────────────────
   function onRoute() {
     const hash = location.hash.replace('#','') || 'home';
@@ -6746,6 +6866,10 @@ window.addEventListener('DOMContentLoaded', function() {
         $('profile-header').innerHTML = '<div class="blog-empty" style="color:#fff;">No profile selected.</div>';
         $('profile-posts').innerHTML  = '';
       }
+    }
+    if (hash === 'voices') {
+      updateStoryFormVisibility();
+      loadStories();
     }
   }
 
@@ -6781,6 +6905,11 @@ window.addEventListener('DOMContentLoaded', function() {
       fillProfileForm();
       openAuth('profile');
     });
+
+    const storySubmitBtn = $('story-submit-btn');
+    if (storySubmitBtn) storySubmitBtn.addEventListener('click', submitStory);
+    const storySigninBtn = $('story-signin-btn');
+    if (storySigninBtn) storySigninBtn.addEventListener('click', () => openAuth('signin'));
 
     window.addEventListener('hashchange', onRoute);
   }
