@@ -5026,19 +5026,21 @@ footer { padding: 64px 60px 0; }
 
       <div class="submit-box" style="margin-top:48px;" id="story-submit-box">
         <div><div class="sb-title" style="font-family:&#39;Playfair Display&#39;,serif;font-size:22px;font-weight:700;margin-bottom:12px;">Share Your Story</div><div class="sb-desc">Have you practiced an HL quality this week? Tried an action challenge? Had a moment that changed how you think about leadership? We want to hear it. Student voices make this community real — and your story might be exactly what another student needs to read.</div></div>
-        <!-- Visible when signed in -->
-        <div class="sb-form" id="story-form-fields" style="display:none;">
-          <input class="sb-input" type="text" id="story-name" placeholder="Your name (or Anonymous)">
-          <input class="sb-input" type="text" id="story-school" placeholder="Your school and grade">
-          <select class="sb-input" id="story-quality" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);"><option value="">Which HL Quality?</option><option>Purpose</option><option>Empathy</option><option>Inclusivity</option><option>Integrity</option><option>Authenticity</option><option>Courage</option><option>Growth</option></select>
-          <textarea class="sb-input sb-textarea" id="story-reflection" placeholder="Your reflection (150-300 words)..."></textarea>
-          <button class="btn btn-gold" id="story-submit-btn" style="width:fit-content;">Submit Your Reflection</button>
-          <div id="story-msg" style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.85);min-height:18px;"></div>
-        </div>
-        <!-- Visible when NOT signed in -->
-        <div id="story-form-locked" style="display:none;padding:18px;background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.25);border-radius:6px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.85);font-size:14px;">
-          <button class="btn btn-gold" id="story-signin-btn" style="margin-bottom:10px;">Sign in to share your story</button>
-          <div style="font-size:13px;color:rgba(255,255,255,0.65);">Creating an account is free. You can still publish under "Anonymous" if you'd rather not show your name.</div>
+        <div style="position:relative;z-index:2;">
+          <!-- Visible when signed in -->
+          <div class="sb-form" id="story-form-fields" style="display:none;">
+            <input class="sb-input" type="text" id="story-name" placeholder="Your name (or Anonymous)">
+            <input class="sb-input" type="text" id="story-school" placeholder="Your school and grade">
+            <select class="sb-input" id="story-quality" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);"><option value="">Which HL Quality?</option><option>Purpose</option><option>Empathy</option><option>Inclusivity</option><option>Integrity</option><option>Authenticity</option><option>Courage</option><option>Growth</option></select>
+            <textarea class="sb-input sb-textarea" id="story-reflection" placeholder="Your reflection (150-300 words)..."></textarea>
+            <button class="btn btn-gold" id="story-submit-btn" style="width:fit-content;">Submit Your Reflection</button>
+            <div id="story-msg" style="font-family:'DM Sans',sans-serif;font-size:13px;color:rgba(255,255,255,0.85);min-height:18px;"></div>
+          </div>
+          <!-- Visible when NOT signed in -->
+          <div id="story-form-locked" style="display:none;padding:18px;background:rgba(255,255,255,0.06);border:1px dashed rgba(255,255,255,0.25);border-radius:6px;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.85);font-size:14px;">
+            <button class="btn btn-gold" id="story-signin-btn" style="margin-bottom:10px;display:block;">Sign in to share your story</button>
+            <div style="font-size:13px;color:rgba(255,255,255,0.65);">Creating an account is free. You can still publish under "Anonymous" if you'd rather not show your name.</div>
+          </div>
         </div>
       </div>
     </div>
