@@ -6311,9 +6311,11 @@ window.addEventListener('DOMContentLoaded', function() {
     updateAuthUI();
 
     sb.auth.onAuthStateChange(async (_event, session) => {
+      console.log('[auth] state change event=', _event, 'user=', session && session.user && session.user.email);
       state.user = session ? session.user : null;
       await loadProfile();
       updateAuthUI();
+      updateStoryFormVisibility();    // always — idempotent and cheap
       const hash = location.hash.replace('#','') || 'home';
       if (hash === 'blog' && state.currentPostId && $('blog-post-view').style.display !== 'none') {
         renderPost(state.currentPostId);
@@ -6321,8 +6323,10 @@ window.addEventListener('DOMContentLoaded', function() {
       if (hash === 'profile' && state.currentProfileId) {
         renderProfile(state.currentProfileId);
       }
-      if (hash === 'voices') {
-        updateStoryFormVisibility();
+      // If user just signed in while sitting on Student Voices, scroll the form into view
+      if (state.user && hash === 'voices') {
+        const box = $('story-submit-box');
+        if (box) setTimeout(() => box.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500);
       }
     });
   }
@@ -6744,18 +6748,18 @@ window.addEventListener('DOMContentLoaded', function() {
   function updateStoryFormVisibility() {
     const fields = $('story-form-fields');
     const locked = $('story-form-locked');
+    console.log('[stories] updateStoryFormVisibility user=', !!state.user, 'fields=', !!fields, 'locked=', !!locked);
     if (!fields || !locked) return;
     if (state.user) {
-      fields.style.display = '';
+      fields.style.display = 'flex';   // .sb-form is a flex column
       locked.style.display = 'none';
-      // Pre-fill name with profile display name if empty
       const nameInput = $('story-name');
       if (nameInput && !nameInput.value && state.profile && state.profile.display_name) {
         nameInput.value = state.profile.display_name;
       }
     } else {
       fields.style.display = 'none';
-      locked.style.display = '';
+      locked.style.display = 'block';
     }
   }
 
