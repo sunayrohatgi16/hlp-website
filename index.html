@@ -5087,14 +5087,19 @@ footer { padding: 64px 60px 0; }
         </div>
         <div>
           <div class="form-grid">
-            <div class="form-group"><label class="form-label">First Name</label><input class="form-input" type="text" placeholder="Your first name"></div>
-            <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" type="text" placeholder="Your last name"></div>
-            <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="your@email.com"></div>
-            <div class="form-group"><label class="form-label">Organization</label><input class="form-input" type="text" placeholder="Company or School"></div>
-            <div class="form-group"><label class="form-label">Role</label><input class="form-input" type="text" placeholder="Your title or role"></div>
-            <div class="form-group"><label class="form-label">Interest</label><select class="form-input"><option>Leader Profile Interview</option><option>Guest Essay</option><option>Club Speaker Session</option><option>Advisory Board</option><option>School Partnership</option><option>Organization Partnership</option><option>Other</option></select></div>
-            <div class="form-group full"><label class="form-label">Message</label><textarea class="form-input form-textarea" placeholder="Tell us a bit about yourself and what you have in mind..."></textarea></div>
-            <div class="form-group full"><button class="btn btn-gold">Send Message</button></div>
+            <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="contact-first-name" type="text" placeholder="Your first name" autocomplete="given-name"></div>
+            <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="contact-last-name" type="text" placeholder="Your last name" autocomplete="family-name"></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="contact-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
+            <div class="form-group"><label class="form-label">Organization</label><input class="form-input" id="contact-organization" type="text" placeholder="Company or School" autocomplete="organization"></div>
+            <div class="form-group"><label class="form-label">Role</label><input class="form-input" id="contact-role" type="text" placeholder="Your title or role" autocomplete="organization-title"></div>
+            <div class="form-group"><label class="form-label">Interest</label><select class="form-input" id="contact-interest"><option>Leader Profile Interview</option><option>Guest Essay</option><option>Club Speaker Session</option><option>Advisory Board</option><option>School Partnership</option><option>Organization Partnership</option><option>Other</option></select></div>
+            <div class="form-group full"><label class="form-label">Message</label><textarea class="form-input form-textarea" id="contact-message" placeholder="Tell us a bit about yourself and what you have in mind..."></textarea></div>
+            <!-- Honeypot: real users leave this blank; bots auto-fill it. Hidden from sight + accessibility. -->
+            <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+              <label>Website (leave blank)<input type="text" id="contact-website" tabindex="-1" autocomplete="off"></label>
+            </div>
+            <div class="form-group full"><button class="btn btn-gold" id="contact-submit-btn" type="button">Send Message</button></div>
+            <div class="form-group full"><div id="contact-msg" style="font-family:'DM Sans',sans-serif;font-size:13.5px;color:var(--forest-dark);min-height:18px;"></div></div>
           </div>
         </div>
       </div>
@@ -6854,6 +6859,56 @@ window.addEventListener('DOMContentLoaded', function() {
       false);
   }
 
+  // ── 12c. Partner page — contact form ───────────────────
+  function showContactMsg(text, isError) {
+    const el = $('contact-msg'); if (!el) return;
+    el.textContent = text || '';
+    el.style.color = isError ? '#b03030' : 'var(--forest-dark)';
+  }
+
+  async function submitContact() {
+    if (!sb) return showContactMsg('Supabase not configured.', true);
+
+    // Honeypot — bots auto-fill hidden fields. Pretend success silently.
+    if (($('contact-website').value || '').length > 0) {
+      showContactMsg('Thanks! We will be in touch.', false);
+      return;
+    }
+
+    const firstName    = ($('contact-first-name')  .value || '').trim();
+    const lastName     = ($('contact-last-name')   .value || '').trim();
+    const email        = ($('contact-email')       .value || '').trim();
+    const organization = ($('contact-organization').value || '').trim();
+    const role         = ($('contact-role')        .value || '').trim();
+    const interest     = ($('contact-interest')    .value || '').trim();
+    const message      = ($('contact-message')     .value || '').trim();
+
+    if (!firstName)               return showContactMsg('Please enter your first name.', true);
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+                                  return showContactMsg('Please enter a valid email address.', true);
+    if (message.length < 10)      return showContactMsg('Please write a short message (at least 10 characters).', true);
+    if (message.length > 4000)    return showContactMsg('Message is too long — keep it under 4000 characters.', true);
+
+    showContactMsg('Sending…', false);
+    const { error } = await sb.from('contact_messages').insert({
+      first_name: firstName,
+      last_name:  lastName,
+      email:      email,
+      organization: organization,
+      role:       role,
+      interest:   interest,
+      message:    message
+    });
+    if (error) return showContactMsg('Could not send: ' + error.message, true);
+
+    // Clear all fields
+    ['contact-first-name','contact-last-name','contact-email','contact-organization','contact-role','contact-message']
+      .forEach(id => { const el = $(id); if (el) el.value = ''; });
+    const sel = $('contact-interest'); if (sel) sel.selectedIndex = 0;
+
+    showContactMsg('Thanks! Your message has been sent. We will be in touch within 5 business days.', false);
+  }
+
   // ── 13. Route hook ─────────────────────────────────────
   function onRoute() {
     const hash = location.hash.replace('#','') || 'home';
@@ -6926,6 +6981,9 @@ window.addEventListener('DOMContentLoaded', function() {
     if (storySubmitBtn) storySubmitBtn.addEventListener('click', submitStory);
     const storySigninBtn = $('story-signin-btn');
     if (storySigninBtn) storySigninBtn.addEventListener('click', () => openAuth('signin'));
+
+    const contactSubmitBtn = $('contact-submit-btn');
+    if (contactSubmitBtn) contactSubmitBtn.addEventListener('click', submitContact);
 
     window.addEventListener('hashchange', onRoute);
   }

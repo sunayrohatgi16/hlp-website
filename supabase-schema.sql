@@ -194,6 +194,34 @@ create policy "stories_delete_own"
 -- NOTE: there is no UPDATE policy. Approval is done by you in the
 -- Supabase Table Editor (which uses service_role and bypasses RLS).
 
+-- ── 9. CONTACT MESSAGES (Partner page form) ──────────────────────
+-- Submissions to the "Get in Touch" form on the Partner page.
+-- Open insert (anyone can send a message — no signup required) but no
+-- public SELECT policy — only the dashboard / service_role can read.
+create table if not exists public.contact_messages (
+  id           bigserial   primary key,
+  first_name   text        not null,
+  last_name    text        default '',
+  email        text        not null,
+  organization text        default '',
+  role         text        default '',
+  interest     text        default '',
+  message      text        not null,
+  created_at   timestamptz not null default now()
+);
+create index if not exists contact_messages_created_idx
+  on public.contact_messages(created_at desc);
+
+alter table public.contact_messages enable row level security;
+
+drop policy if exists "contact_messages_insert_anyone" on public.contact_messages;
+create policy "contact_messages_insert_anyone"
+  on public.contact_messages for insert
+  with check (true);
+
+-- NO select / update / delete policies — only the Supabase dashboard
+-- (using service_role) can read these. That keeps user emails private.
+
 -- ═══════════════════════════════════════════════════════════════════
 -- Done. Tables, security policies, signup trigger, and storage ready.
 -- ═══════════════════════════════════════════════════════════════════
