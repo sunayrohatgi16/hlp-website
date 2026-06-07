@@ -6770,10 +6770,11 @@ window.addEventListener('DOMContentLoaded', function() {
     // Remove any DB-rendered cards from a previous render
     grid.querySelectorAll('[data-story-id]').forEach(el => el.remove());
 
+    // No .eq('approved', true) here — RLS already enforces:
+    //   anyone sees approved rows; a signed-in user also sees their own pending rows.
     const { data, error } = await sb
       .from('stories')
-      .select('id,display_name,school_grade,quality,reflection,created_at')
-      .eq('approved', true)
+      .select('id,display_name,school_grade,quality,reflection,created_at,approved')
       .order('created_at', { ascending: false })
       .limit(60);
     if (error) {
@@ -6797,8 +6798,17 @@ window.addEventListener('DOMContentLoaded', function() {
       : (date || 'Reflection');
     const name   = s.display_name || 'Anonymous';
     const school = s.school_grade || '';
+    const pending = s.approved === false;
+    const pendingBadge = pending
+      ? '<div style="background:rgba(201,168,76,0.14);border:1px solid rgba(201,168,76,0.4);color:#a17e1a;font-family:\'DM Sans\',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 10px;border-radius:4px;margin-bottom:12px;display:flex;align-items:center;gap:6px;">'
+        + '<span style="width:6px;height:6px;background:#c9a84c;border-radius:50%;display:inline-block;"></span>'
+        + 'Pending review — only you can see this'
+      + '</div>'
+      : '';
+    const cardStyle = pending ? ' style="border:1px dashed rgba(201,168,76,0.55);"' : '';
     return ''
-      + '<div class="voice-card reveal visible" data-story-id="' + s.id + '">'
+      + '<div class="voice-card reveal visible" data-story-id="' + s.id + '"' + cardStyle + '>'
+      +   pendingBadge
       +   '<span class="chip ' + chip + '" style="margin-bottom:12px;display:inline-block;">'
       +     escapeHtml(chipText)
       +   '</span>'
