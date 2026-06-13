@@ -1457,6 +1457,7 @@ nav.scrolled {
 .sb-input { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:4px; padding:12px 14px; font-family:'DM Sans',sans-serif; font-size:13px; color:#fff; outline:none; transition:border-color 0.2s; }
 .sb-input::placeholder { color:rgba(255,255,255,0.35); }
 .sb-input:focus { border-color:var(--gold); }
+select.sb-input option { background:#fff; color:#222; }
 .sb-textarea { height:100px; resize:vertical; }
 
 /* ════════════════════════════════════════════
@@ -6244,10 +6245,22 @@ window.addEventListener('DOMContentLoaded', function() {
     if (!error) state.profile = data;
   }
 
+  function getInitials() {
+    const name = (state.profile && state.profile.display_name) || (state.user && state.user.email) || '';
+    if (!name) return '';
+    const base  = name.includes('@') ? name.split('@')[0] : name;
+    const parts = base.split(/[\s._-]+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    return (parts[0] || '').slice(0, 2).toUpperCase();
+  }
+
   function updateAuthUI() {
-    const text = state.user ? 'Sign Out' : 'Sign In';
-    const a = $('nav-account-btn');        if (a) a.textContent = text;
-    const b = $('nav-mobile-account-btn'); if (b) b.textContent = text;
+    const text  = state.user ? getInitials() : 'Sign In';
+    const title = state.user
+      ? 'Signed in as ' + ((state.profile && state.profile.display_name) || state.user.email) + ' — click to sign out'
+      : 'Sign in';
+    const a = $('nav-account-btn');        if (a) { a.textContent = text; a.title = title; }
+    const b = $('nav-mobile-account-btn'); if (b) { b.textContent = text; b.title = title; }
   }
 
   async function initAuth() {
